@@ -3,10 +3,11 @@ Babel==2.10.3
 bcc==0.1.10
 bcrypt==3.2.2
 blinker==1.7.0
+Brlapi==none
 certifi==2023.11.17
 chardet==5.2.0
 click==8.1.6
-cloud-init==25.1.4
+cloud-init==none
 colorama==0.4.6
 command-not-found==0.3
 configobj==5.0.8
