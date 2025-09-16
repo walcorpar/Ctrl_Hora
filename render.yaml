@@ -7,4 +7,4 @@ services:
       sudo apt-get update
       sudo apt-get install -y libdbus-1-dev
       pip install -r requirements.txt
-    startCommand: gunicorn Ctrl_Hora:app
+    startCommand: gunicorn Ctrl-Hora:app
