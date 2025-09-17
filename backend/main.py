@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.middleware.cors import CORSMiddleware  # Importa el middleware de CORS
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
 from datetime import datetime
@@ -18,29 +18,35 @@ db = client[DB_NAME]
 
 app = FastAPI()
 
-# -----------------
 # Configuración de CORS
-# -----------------
 origins = [
-    "https://ctrl-hora-frontend.onrender.com",  # La URL exacta de tu frontend
+    "https://ctrl-hora-frontend.onrender.com",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos los headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-# -----------------
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 # Models
 class User(BaseModel):
     username: str
     password: str
-    is_admin: bool = False  # Default to False
+    is_admin: bool = False
 
 class Record(BaseModel):
     entry_time: datetime = None
@@ -53,12 +59,18 @@ class Record(BaseModel):
 def get_user(username: str):
     return db.users.find_one({"username": username})
 
-# Helper to verify password
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+# Authentication helper
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = db.users.find_one({"token": token})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+# Admin authentication helper
+async def get_current_admin_user(current_user: dict = Depends(get_current_user)):
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return current_user
 
 # Login endpoint
 @app.post("/login")
@@ -72,36 +84,23 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 # Endpoint to register entry
 @app.post("/entry")
-async def register_entry(gps_position: str, token: str = Depends(oauth2_scheme)):
-    user = db.users.find_one({"token": token})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
+async def register_entry(gps_position: str, current_user: dict = Depends(get_current_user)):
     record = {
-        "user_id": user["username"],
+        "user_id": current_user["username"],
         "entry_time": datetime.utcnow(),
         "gps_position": gps_position,
-        "token": token
+        "token": current_user["token"]
     }
-    
     result = db.records.insert_one(record)
-    
-    # ----------------------------------------------------
-    #  SOLUCIÓN: CONVERTIR EL _id A STRING PARA EVITAR ERRORES
-    # ----------------------------------------------------
-    # Obtener el documento insertado y convertir el _id
     inserted_record = db.records.find_one({"_id": result.inserted_id})
     if inserted_record:
         inserted_record["_id"] = str(inserted_record["_id"])
-    
     return {"message": "Entry registered", "record": inserted_record}
-
 
 # Endpoint to register exit
 @app.post("/exit")
-async def register_exit(gps_position: str, token: str = Depends(oauth2_scheme)):
-    user = db.users.find_one({"token": token})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
+async def register_exit(gps_position: str, current_user: dict = Depends(get_current_user)):
+    user = current_user
     latest_record = db.records.find_one({"user_id": user["username"], "exit_time": None}, sort=[("entry_time", -1)])
     if not latest_record:
         raise HTTPException(status_code=400, detail="No active entry found")
@@ -109,7 +108,7 @@ async def register_exit(gps_position: str, token: str = Depends(oauth2_scheme)):
     db.records.update_one({"_id": latest_record["_id"]}, update)
     return {"message": "Exit registered"}
 
-# Add user
+# Endpoint to add user (for initial setup, no auth required)
 @app.post("/add-user")
 async def add_user(user: User):
     if get_user(user.username):
@@ -119,20 +118,9 @@ async def add_user(user: User):
     db.users.insert_one(user_data)
     return {"message": "User added"}
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user
-
-async def get_current_admin_user(current_user: dict = Depends(get_current_user)):
-    if not current_user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Not authorized")
-    return current_user
-
-# -------------------- MÓDULO DE ADMINISTRACIÓN DE USUARIOS --------------------
-
+# Admin endpoints
 @app.get("/api/users", dependencies=[Depends(get_current_admin_user)])
 async def get_all_users():
-    # Obtiene todos los usuarios y excluye la contraseña por seguridad
     users = list(db.users.find({}, {"password": 0, "token": 0}))
     for user in users:
         user["_id"] = str(user["_id"])
@@ -142,7 +130,9 @@ async def get_all_users():
 async def create_user(user: User, admin: dict = Depends(get_current_admin_user)):
     if get_user(user.username):
         raise HTTPException(status_code=400, detail="User already exists")
-    db.users.insert_one(user.dict())
+    user_data = user.dict()
+    user_data["password"] = get_password_hash(user.password)
+    db.users.insert_one(user_data)
     return {"message": "User created successfully"}
 
 @app.put("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
@@ -150,12 +140,9 @@ async def update_user(username: str, user_update: User):
     user = get_user(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Actualizar solo los campos proporcionados
     update_data = user_update.dict(exclude_unset=True)
     if update_data:
         db.users.update_one({"username": username}, {"$set": update_data})
-    
     return {"message": "User updated successfully"}
 
 @app.delete("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
