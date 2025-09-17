@@ -102,54 +102,11 @@ async def register_exit(gps_position: str, token: str = Depends(oauth2_scheme)):
 
 # For demo: Add a user (in prod, use registration endpoint with hashing)
 @app.post("/add-user")
-# Dependencia para verificar permisos de administrador
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    user = db.users.find_one({"token": token})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user
-
-async def get_current_admin_user(current_user: dict = Depends(get_current_user)):
-    if not current_user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Not authorized")
-    return current_user
-
-# -------------------- MÓDULO DE ADMINISTRACIÓN DE USUARIOS --------------------
-
-@app.get("/api/users", dependencies=[Depends(get_current_admin_user)])
-async def get_all_users():
-    # Obtiene todos los usuarios y excluye la contraseña por seguridad
-    users = list(db.users.find({}, {"password": 0, "token": 0}))
-    for user in users:
-        user["_id"] = str(user["_id"])
-    return users
-
-@app.post("/api/users", status_code=201)
-async def create_user(user: User, admin: dict = Depends(get_current_admin_user)):
+async def add_user(user: User):
     if get_user(user.username):
-        raise HTTPException(status_code=400, detail="User already exists")
+        raise HTTPException(status_code=400, detail="User exists")
     db.users.insert_one(user.dict())
-    return {"message": "User created successfully"}
-
-@app.put("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
-async def update_user(username: str, user_update: User):
-    user = get_user(username)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Actualizar solo los campos proporcionados
-    update_data = user_update.dict(exclude_unset=True)
-    if update_data:
-        db.users.update_one({"username": username}, {"$set": update_data})
-    
-    return {"message": "User updated successfully"}
-
-@app. delete("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
-async def delete_user(username: str):
-    result = db.users.delete_one({"username": username})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted successfully"}
+    return {"message": "User added"}
 
 if __name__ == "__main__":
     import uvicorn
