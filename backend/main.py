@@ -7,6 +7,7 @@ from datetime import datetime
 from uuid import uuid4
 import os
 from dotenv import load_dotenv
+from passlib.context import CryptContext
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -39,6 +40,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 class User(BaseModel):
     username: str
     password: str
+    is_admin: bool = False  # Default to False
 
 class Record(BaseModel):
     entry_time: datetime = None
@@ -51,11 +53,18 @@ class Record(BaseModel):
 def get_user(username: str):
     return db.users.find_one({"username": username})
 
+# Helper to verify password
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
 # Login endpoint
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user(form_data.username)
-    if not user or user["password"] != form_data.password:
+    if not user or not verify_password(form_data.password, user["password"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     token = str(uuid4())
     db.users.update_one({"_id": user["_id"]}, {"$set": {"token": token}})
@@ -100,11 +109,16 @@ async def register_exit(gps_position: str, token: str = Depends(oauth2_scheme)):
     db.records.update_one({"_id": latest_record["_id"]}, update)
     return {"message": "Exit registered"}
 
-# For demo: Add a user (in prod, use registration endpoint with hashing)
+# Add user
 @app.post("/add-user")
-# Dependencia para verificar permisos de administrador
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    user = db.users.find_one({"token": token})
+async def add_user(user: User):
+    if get_user(user.username):
+        raise HTTPException(status_code=400, detail="User already exists")
+    user_data = user.dict()
+    user_data["password"] = get_password_hash(user.password)
+    db.users.insert_one(user_data)
+    return {"message": "User added"}
+
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
     return user
@@ -144,7 +158,7 @@ async def update_user(username: str, user_update: User):
     
     return {"message": "User updated successfully"}
 
-@app. delete("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
+@app.delete("/api/users/{username}", dependencies=[Depends(get_current_admin_user)])
 async def delete_user(username: str):
     result = db.users.delete_one({"username": username})
     if result.deleted_count == 0:

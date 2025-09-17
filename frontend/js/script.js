@@ -130,3 +130,10 @@
                 showMessage('Error: ' + err.message);
             }
         });
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    token = null;
+    document.getElementById('controls').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    showMessage('Logout exitoso');
+});
