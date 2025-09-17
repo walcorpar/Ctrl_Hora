@@ -73,8 +73,19 @@ async def register_entry(gps_position: str, token: str = Depends(oauth2_scheme))
         "gps_position": gps_position,
         "token": token
     }
-    db.records.insert_one(record)
-    return {"message": "Entry registered", "record": record}
+    
+    result = db.records.insert_one(record)
+    
+    # ----------------------------------------------------
+    #  SOLUCIÓN: CONVERTIR EL _id A STRING PARA EVITAR ERRORES
+    # ----------------------------------------------------
+    # Obtener el documento insertado y convertir el _id
+    inserted_record = db.records.find_one({"_id": result.inserted_id})
+    if inserted_record:
+        inserted_record["_id"] = str(inserted_record["_id"])
+    
+    return {"message": "Entry registered", "record": inserted_record}
+
 
 # Endpoint to register exit
 @app.post("/exit")
