@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware  # Importa el middleware de CORS
 from pydantic import BaseModel
 from pymongo import MongoClient
 from datetime import datetime
@@ -9,24 +10,40 @@ from dotenv import load_dotenv
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = "ctrl_hora"
+DB_NAME = os.getenv("DB_NAME", "ctrl_hora")
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
 app = FastAPI()
 
+# -----------------
+# Configuración de CORS
+# -----------------
+origins = [
+    "https://ctrl-hora-frontend.onrender.com",  # La URL exacta de tu frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos los headers
+)
+# -----------------
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Models
 class User(BaseModel):
     username: str
-    password: str  # In production, hash this!
+    password: str
 
 class Record(BaseModel):
     entry_time: datetime = None
     exit_time: datetime = None
-    gps_position: str  # e.g., "lat,long"
+    gps_position: str
     token: str
     user_id: str
 
@@ -38,15 +55,16 @@ def get_user(username: str):
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user(form_data.username)
-    if not user or user["password"] != form_data.password:  # In prod, use hashed comparison
+    if not user or user["password"] != form_data.password:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    token = str(uuid4())  # Unique token
+    token = str(uuid4())
+    db.users.update_one({"_id": user["_id"]}, {"$set": {"token": token}})
     return {"access_token": token, "token_type": "bearer"}
 
 # Endpoint to register entry
 @app.post("/entry")
 async def register_entry(gps_position: str, token: str = Depends(oauth2_scheme)):
-    user = db.users.find_one({"token": token})  # Validate token (in prod, use JWT)
+    user = db.users.find_one({"token": token})
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
     record = {
@@ -64,7 +82,6 @@ async def register_exit(gps_position: str, token: str = Depends(oauth2_scheme)):
     user = db.users.find_one({"token": token})
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
-    # Find the latest entry without exit
     latest_record = db.records.find_one({"user_id": user["username"], "exit_time": None}, sort=[("entry_time", -1)])
     if not latest_record:
         raise HTTPException(status_code=400, detail="No active entry found")
