@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Hora Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        form { margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Control de Hora</h1>
+    
+    <!-- Login Form -->
+    <form id="loginForm">
+        <input type="text" id="rut" placeholder="RUT" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Login</button>
+    </form>
+    
+    <!-- Controls (hidden until login) -->
+    <div id="controls" style="display: none;">
+        <button id="entryBtn">Ingresar</button>
+        <button id="exitBtn">Salir</button>
+        <p id="message"></p>
+    </div>
+
+    <script src="./js/script.js"></script>
+</body>
+</html>

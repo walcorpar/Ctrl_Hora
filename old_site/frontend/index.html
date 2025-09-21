@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Hora Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        form { margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Control de Hora</h1>
+    
+    <!-- Login Form -->
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Login</button>
+    </form>
+    
+    <!-- Controls (hidden until login) -->
+    <div id="controls" style="display: none;">
+        <button id="entryBtn">Ingresar</button>
+        <button id="exitBtn">Salir</button>
+        <button id="logoutBtn">Logout</button>
+        <p id="message"></p>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <h2>Panel de Administración</h2>
+        
+        <h3>Crear nuevo usuario</h3>
+        <form id="createUserForm">
+            <input type="text" id="newUsername" placeholder="Usuario" required>
+            <input type="password" id="newPassword" placeholder="Contraseña" required>
+            <label><input type="checkbox" id="isAdminCheckbox"> Es Administrador</label>
+            <button type="submit">Crear Usuario</button>
+        </form>
+
+        <h3>Lista de Usuarios</h3>
+        <ul id="userList"></ul>
+    </div>
+
+    <script src="./js/script.js"></script>
+</body>
+</html>

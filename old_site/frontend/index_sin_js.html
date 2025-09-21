@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Hora Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        form { margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Control de Hora</h1>
+    
+    <!-- Login Form -->
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Login</button>
+    </form>
+    
+    <!-- Controls (hidden until login) -->
+    <div id="controls" style="display: none;">
+        <button id="entryBtn">Ingresar</button>
+        <button id="exitBtn">Salir</button>
+        <p id="message"></p>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <h2>Panel de Administración</h2>
+        
+        <h3>Crear nuevo usuario</h3>
+        <form id="createUserForm">
+            <input type="text" id="newUsername" placeholder="Usuario" required>
+            <input type="password" id="newPassword" placeholder="Contraseña" required>
+            <label><input type="checkbox" id="isAdminCheckbox"> Es Administrador</label>
+            <button type="submit">Crear Usuario</button>
+        </form>
+
+        <h3>Lista de Usuarios</h3>
+        <ul id="userList"></ul>
+    </div>
+
+    <script>
+        const API_URL = 'https://ctrl-hora-backend.onrender.com';
+        let token = null;
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `username=${username}&password=${password}`
+                });
+                if (!res.ok) throw new Error('Login failed');
+                const data = await res.json();
+                token = data.access_token;
+                document.getElementById('controls').style.display = 'block';
+                document.getElementById('loginForm').style.display = 'none';
+                showMessage('Login exitoso');
+            } catch (err) {
+                showMessage('Error: ' + err.message);
+            }
+        });
+
+        // Get GPS
+        async function getGPS() {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    resolve(`${pos.coords.latitude},${pos.coords.longitude}`);
+                }, reject);
+            });
+        }
+
+        // Entry
+        document.getElementById('entryBtn').addEventListener('click', async () => {
+            try {
+                const gps = await getGPS();
+                const res = await fetch(`${API_URL}/entry?gps_position=${gps}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Entry failed');
+                showMessage('Ingreso registrado');
+            } catch (err) {
+                showMessage('Error: ' + err.message);
+            }
+        });
+
+        // Exit
+        document.getElementById('exitBtn').addEventListener('click', async () => {
+            try {
+                const gps = await getGPS();
+                const res = await fetch(`${API_URL}/exit?gps_position=${gps}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Exit failed');
+                showMessage('Salida registrada');
+            } catch (err) {
+                showMessage('Error: ' + err.message);
+            }
+        });
+
+        function showMessage(msg) {
+            document.getElementById('message').textContent = msg;
+        }
+    </script>
+</body>
+</html>
