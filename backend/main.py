@@ -171,6 +171,10 @@ async def delete_user(rut: str):
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
 
+@app.get("/", include_in_schema=False)
+async def read_root():
+    return {"message": "Ctrl Hora Backend - API Running"}
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
