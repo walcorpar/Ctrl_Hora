@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DB_NAME", "ctrl_hora")
+DB_NAME = os.getenv("DB_NAME")
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
@@ -20,7 +20,7 @@ app = FastAPI()
 
 # Configuración de CORS
 origins = [
-    "https://ctrl-hora-frontend.onrender.com",
+    "https://admin-frontend-82i1.onrender.com",
     "https://ctrl-hora-admin-frontend.onrender.com",
 ]
 
