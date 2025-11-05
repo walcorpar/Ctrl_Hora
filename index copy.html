@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css" />
+    <title>Ingreso de hora</title>
+</head>
+<body>
+    <header class="container mt-5 text-center">
+        <h3>Ingreso de hora</h3>
+    </header>
+    <section class="section_grd">
+        <div class="container mt-5">
+            <div class="row justify-content-center d-flex">
+                        <div class="text-center col col-5">
+                            <form action="/submit-time" method="POST">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Entrada</button>
+                                    <button type="submit" class="btn btn-primary">Salida</button>
+                                </div>
+                            </form>
+                        </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="text-center mt-5">
+                <h4>Hora actual:</h4>
+                <p id="currentTime"></p>
+            </div>
+           
+        </div>
+    </section>
+    <footer class="card-footer text-center py-3 mt-5 border-top ">
+        &copy; 2024 Mi Aplicación
+    </footer>
+     <script src="./assest/js/script.js"></script>
+</body>
+</html>
