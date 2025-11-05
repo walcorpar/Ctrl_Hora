@@ -1,6 +1,125 @@
+/* ------------------------------------- */
+/* 1. Variables de Colores Globales      */
+/* ------------------------------------- */
+:root {
+    --color-primary-blue: #0040A5;
+    --color-secondary-yellow: #FFD700;
+    --color-text-light: #FFFFFF;
+    --color-text-dark: #212529;
+    --color-bg-light-gray: #f8f9fa;
+}
 
+/* ------------------------------------- */
+/* 2. Estilos Generales y Resets         */
+/* ------------------------------------- */
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Fuente más moderna */
+    color: var(--color-text-dark); /* Color de texto por defecto */
+}
+
+/* ------------------------------------- */
+/* 3. Estilo del Fondo (Body Background) */
+/* ------------------------------------- */
+.body_background {
+    background-image: url('https://uploads.onecompiler.io/433694vav/443pype33/Logo.jpg');
+    background-color: var(--color-bg-light-gray);
+    height: 100vh;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+    z-index: 1;
+}
+
+.body_background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0, 64, 165, 0.2); /* Azul principal del logo con opacidad */
+    z-index: -1;
+}
+
+/* ------------------------------------- */
+/* 4. Estilos del Encabezado (Header)    */
+/* ------------------------------------- */
+header {
+    background-color: var(--color-primary-blue);
+    color: var(--color-text-light);
+    padding: 15px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex; /* Asegura el flex para el logo y texto */
+    align-items: center;
+    justify-content: center; /* Centra todo si quieres */
+    /* Si quieres el logo a la izquierda y el texto centrado, usa: */
+    /* justify-content: flex-start; */
+}
+
+header h3, header p {
+    color: var(--color-text-light);
+    margin-bottom: 0;
+}
+
+/* Si mantienes el logo a la izquierda y el texto centrado con mx-auto */
+header .navbar-brand {
+    margin-right: auto; /* Empuja el logo a la izquierda, dando espacio al texto */
+}
+header p.fs-2 {
+    margin: 0 auto; /* Centra el texto en el espacio restante */
+}
+/* Estilo opcional para el logo */
+.navbar-brand img {
+    background-color: var(--color-secondary-yellow);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+
+/* ------------------------------------- */
+/* 5. Estilos de la Sección Principal    */
+/* ------------------------------------- */
+.section_grd {
+    background-color: var(--color-text-light);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.section_grd h4 {
+    color: var(--color-primary-blue);
+}
+
+/* ------------------------------------- */
+/* 6. Estilos de Botones                 */
+/* ------------------------------------- */
+.btn-primary {
+    background-color: var(--color-primary-blue);
+    border-color: var(--color-primary-blue);
+    color: var(--color-text-light);
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #002D80;
+    border-color: #002D80;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ------------------------------------- */
+/* 7. Estilos del Pie de Página (Footer) */
+/* ------------------------------------- */
 footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+    background-color: var(--color-primary-blue);
+    color: var(--color-text-light);
+    border-top: 3px solid var(--color-secondary-yellow);
+    font-size: 0.9rem;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    /* Para el footer 'sticky' al fondo de la página */
+    /* Si usas un layout flexbox en el body: */
+    /* margin-top: auto; */
 }
